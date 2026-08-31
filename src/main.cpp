@@ -19,7 +19,7 @@ const long gmtOffset_sec = -3 * 3600;    // Fuso Horário (UTC-3 / Brasília: -3
 const int daylightOffset_sec = 0;        // Horário de verão (0 se não houver)
 
 // URL Base da planilha Google
-String urlBase = "https://script.google.com/macros/s/AKfycbzh2fsL6vxMB2gDTB1bxED3H0ZITUf3vVx4AthVpAQxORCgwOH1pKJ8Js43pgZgZkFV/exec";
+String urlBase = "https://script.google.com/macros/s/AKfycbxvy1evArJ8iMJhsP3SbZJcrJohTcLogSUlTB3r18W2Avmwf9mfFNmOhiLKdTUrxkBORw/exec";
 
 bool lastPinState = LOW;
 
