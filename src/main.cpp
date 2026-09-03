@@ -4,6 +4,7 @@
 #include <time.h>
 #include <vector>
 #include <HTTPClient.h>
+#include <HTTPUpdate.h>
 #include <WiFiClientSecure.h>
 
 #define TRIGGER_PIN 0 // Usa o próprio botão BOOT do ESP32 para reset
@@ -45,7 +46,59 @@ time_t operationEndTime = 0;
 WiFiClientSecure client;
 HTTPClient http;
 
+// URLs do seu repositório no GitHub (Links "Raw")
+const char* versionURL = "https://raw.githubusercontent.com/ramonmoraesrr/horimetro_senai390/master/version.txt";
+const char* firmwareURL = "https://raw.githubusercontent.com/ramonmoraesrr/horimetro_senai390/master/firmware.bin";
+
 // --- Funções Auxiliares ---
+void checkForUpdates() {
+  Serial.println("Buscando atualizações no GitHub...");
+  
+  WiFiClientSecure client;
+  client.setInsecure(); // Necessário para acessar HTTPS ignorando validação de certificado
+  
+  HTTPClient http;
+  http.begin(client, versionURL);
+  
+  int httpCode = http.GET();
+  
+  if (httpCode == HTTP_CODE_OK) {
+    String payload = http.getString();
+    
+    // FIRMWARE_VERSION é injetado automaticamente pelo script Python!
+    long currentVersion = FIRMWARE_VERSION; 
+    long serverVersion = payload.toInt();
+    
+    Serial.printf("Versão atual (ESP32): %ld\n", currentVersion);
+    Serial.printf("Versão online (GitHub): %ld\n", serverVersion);
+    
+    // Verifica se a versão da nuvem é mais recente (maior timestamp)
+    if (serverVersion > currentVersion) {
+      Serial.println("Nova versão encontrada! Baixando firmware.bin...");
+      
+      t_httpUpdate_return ret = httpUpdate.update(client, firmwareURL);
+      
+      switch (ret) {
+        case HTTP_UPDATE_FAILED:
+          Serial.printf("Falha no OTA (%d): %s\n", httpUpdate.getLastError(), httpUpdate.getLastErrorString().c_str());
+          break;
+        case HTTP_UPDATE_NO_UPDATES:
+          Serial.println("Nenhuma atualização encontrada na URL do binário.");
+          break;
+        case HTTP_UPDATE_OK:
+          Serial.println("Atualização concluída com sucesso! Reiniciando...");
+          break;
+      }
+    } else {
+      Serial.println("O firmware já está na versão mais recente.");
+    }
+  } else {
+    Serial.printf("Falha ao acessar version.txt. Erro HTTP: %d\n", httpCode);
+  }
+  
+  http.end();
+}
+
 String formatTime(time_t epochTime) {
     struct tm *timeinfo = localtime(&epochTime);
     char buffer[30];
@@ -193,6 +246,8 @@ void setup() {
                       timeinfo.tm_mday, timeinfo.tm_mon + 1, timeinfo.tm_year + 1900,
                       timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
     }
+
+    checkForUpdates();
 }
 
 void loop() {
