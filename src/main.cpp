@@ -289,7 +289,7 @@ void setup() {
                       timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
     }
 
-    checkForUpdates();
+    // checkForUpdates();
 }
 
 void loop() {
