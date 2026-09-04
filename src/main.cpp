@@ -7,6 +7,7 @@
 #include <HTTPUpdate.h>
 #include <WiFiClientSecure.h>
 // #include "BluetoothSerial.h"
+// Bluetooth desativado por limitações de espaço
 
 // Verifica se o Bluetooth está habilitado nas configurações do chip
 // #if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
