@@ -6,6 +6,19 @@
 #include <HTTPClient.h>
 #include <HTTPUpdate.h>
 #include <WiFiClientSecure.h>
+// #include "BluetoothSerial.h"
+
+// Verifica se o Bluetooth está habilitado nas configurações do chip
+// #if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
+// #error O Bluetooth não está habilitado! Habilite-o no menuconfig.
+// #endif
+
+// BluetoothSerial SerialBT;
+
+// Macro inteligente para imprimir em ambas as seriais (USB e Bluetooth)
+#define DEBUG_PRINT(x)    { Serial.print(x); /*SerialBT.print(x);*/ }
+#define DEBUG_PRINTLN(x)  { Serial.println(x); /*SerialBT.println(x);*/ }
+#define DEBUG_PRINTF(format, ...) { Serial.printf(format, ##__VA_ARGS__); /*SerialBT.printf(format, ##__VA_ARGS__);*/ }
 
 #define TRIGGER_PIN 0 // Usa o próprio botão BOOT do ESP32 para reset
 #define MOTOR_PIN_CLOCKWISE 23
@@ -52,8 +65,9 @@ const char* firmwareURL = "https://raw.githubusercontent.com/ramonmoraesrr/horim
 
 // --- Funções Auxiliares ---
 void checkForUpdates() {
-  Serial.println("Buscando atualizações no GitHub...");
-  
+//   Serial.println("Buscando atualizações no GitHub...");
+  DEBUG_PRINTLN("Buscando atualizações no GitHub...");
+    
   WiFiClientSecure client;
   client.setInsecure(); // Necessário para acessar HTTPS ignorando validação de certificado
   
@@ -69,31 +83,39 @@ void checkForUpdates() {
     long currentVersion = FIRMWARE_VERSION; 
     long serverVersion = payload.toInt();
     
-    Serial.printf("Versão atual (ESP32): %ld\n", currentVersion);
-    Serial.printf("Versão online (GitHub): %ld\n", serverVersion);
+    // Serial.printf("Versão atual (ESP32): %ld\n", currentVersion);
+    // Serial.printf("Versão online (GitHub): %ld\n", serverVersion);
+    DEBUG_PRINTF("Versão atual (ESP32): %ld\n", currentVersion);
+    DEBUG_PRINTF("Versão online (GitHub): %ld\n", serverVersion);
     
     // Verifica se a versão da nuvem é mais recente (maior timestamp)
     if (serverVersion > currentVersion) {
-      Serial.println("Nova versão encontrada! Baixando firmware.bin...");
+    //   Serial.println("Nova versão encontrada! Baixando firmware.bin...");
+      DEBUG_PRINTLN("Nova versão encontrada! Baixando firmware.bin...");
       
       t_httpUpdate_return ret = httpUpdate.update(client, firmwareURL);
       
       switch (ret) {
         case HTTP_UPDATE_FAILED:
-          Serial.printf("Falha no OTA (%d): %s\n", httpUpdate.getLastError(), httpUpdate.getLastErrorString().c_str());
+        //   Serial.printf("Falha no OTA (%d): %s\n", httpUpdate.getLastError(), httpUpdate.getLastErrorString().c_str());
+          DEBUG_PRINTF("Falha no OTA (%d): %s\n", httpUpdate.getLastError(), httpUpdate.getLastErrorString().c_str());
           break;
         case HTTP_UPDATE_NO_UPDATES:
-          Serial.println("Nenhuma atualização encontrada na URL do binário.");
+        //   Serial.println("Nenhuma atualização encontrada na URL do binário.");
+          DEBUG_PRINTLN("Nenhuma atualização encontrada na URL do binário.");
           break;
         case HTTP_UPDATE_OK:
-          Serial.println("Atualização concluída com sucesso! Reiniciando...");
+        //   Serial.println("Atualização concluída com sucesso! Reiniciando...");
+          DEBUG_PRINTLN("Atualização concluída com sucesso! Reiniciando...");
           break;
       }
     } else {
-      Serial.println("O firmware já está na versão mais recente.");
+    //   Serial.println("O firmware já está na versão mais recente.");
+      DEBUG_PRINTLN("O firmware já está na versão mais recente.");
     }
   } else {
-    Serial.printf("Falha ao acessar version.txt. Erro HTTP: %d\n", httpCode);
+    // Serial.printf("Falha ao acessar version.txt. Erro HTTP: %d\n", httpCode);
+    DEBUG_PRINTF("Falha ao acessar version.txt. Erro HTTP: %d\n", httpCode);
   }
   
   http.end();
@@ -136,25 +158,34 @@ String urlEncode(String str) {
 }
 
 void printFinalReport() {
-    Serial.println("\n--- RELATÓRIO FINAL DA OPERAÇÃO ---");
-    Serial.printf("Início da Operação: %s\n", formatTime(operationStartTime).c_str());
-    Serial.printf("Fim da Operação: %s\n", formatTime(operationEndTime).c_str());
+    // Serial.println("\n--- RELATÓRIO FINAL DA OPERAÇÃO ---");
+    // Serial.printf("Início da Operação: %s\n", formatTime(operationStartTime).c_str());
+    // Serial.printf("Fim da Operação: %s\n", formatTime(operationEndTime).c_str());
+    DEBUG_PRINTLN("\n--- RELATÓRIO FINAL DA OPERAÇÃO ---");
+    DEBUG_PRINTF("Início da Operação: %s\n", formatTime(operationStartTime).c_str());
+    DEBUG_PRINTF("Fim da Operação: %s\n", formatTime(operationEndTime).c_str());
     
     // Converte milissegundos para segundos para exibição
-    Serial.printf("Tempo Total Ligado: %lu segundos\n", totalTimeOn / 1000);
-    Serial.printf("Tempo Total Desligado: %lu segundos\n", totalTimeOff / 1000);
+    // Serial.printf("Tempo Total Ligado: %lu segundos\n", totalTimeOn / 1000);
+    // Serial.printf("Tempo Total Desligado: %lu segundos\n", totalTimeOff / 1000);
+    DEBUG_PRINTF("Tempo Total Ligado: %lu segundos\n", totalTimeOn / 1000);
+    DEBUG_PRINTF("Tempo Total Desligado: %lu segundos\n", totalTimeOff / 1000);
     
-    Serial.println("\n--- Histórico de Eventos (Buffer) ---");
+    // Serial.println("\n--- Histórico de Eventos (Buffer) ---");
+    DEBUG_PRINTLN("\n--- Histórico de Eventos (Buffer) ---");
     for (size_t i = 0; i < eventBuffer.size(); i++) {
-        Serial.printf("[%s] Motor %s\n", formatTime(eventBuffer[i].timestamp).c_str(), eventBuffer[i].state.c_str());
+        // Serial.printf("[%s] Motor %s\n", formatTime(eventBuffer[i].timestamp).c_str(), eventBuffer[i].state.c_str());
+        DEBUG_PRINTF("[%s] Motor %s\n", formatTime(eventBuffer[i].timestamp).c_str(), eventBuffer[i].state.c_str());
     }
-    Serial.println("-----------------------------------\n");
+    // Serial.println("-----------------------------------\n");
+    DEBUG_PRINTLN("-----------------------------------\n");
 
     // Monta a URL final com os parâmetros do GET
     // O resultado será: https://script.google.../exec?id_torno=4&start_datetime=1234&end_datetime=1234&uptime=1234
     String urlFinal = urlBase + "?id_torno=" + urlEncode(torno_id) + "&start_datetime=" + urlEncode(formatTime(operationStartTime)) + "&end_datetime=" + urlEncode(formatTime(operationEndTime)) + "&uptime=" + String(totalTimeOn / 1000);
 
-    Serial.println("Enviando requisição para: " + urlFinal);
+    // Serial.println("Enviando requisição para: " + urlFinal);
+    DEBUG_PRINTLN("Enviando requisição para: " + urlFinal);
 
     // Inicia a conexão
     http.begin(client, urlFinal);
@@ -166,13 +197,18 @@ void printFinalReport() {
     int codigoResposta = http.GET();
 
     if (codigoResposta > 0) {
-      Serial.print("Código HTTP: ");
-      Serial.println(codigoResposta);
+    //   Serial.print("Código HTTP: ");
+    //   Serial.println(codigoResposta);
+      DEBUG_PRINT("Código HTTP: ");
+      DEBUG_PRINTLN(codigoResposta);
       String respostaServidor = http.getString();
-      Serial.println("Resposta: " + respostaServidor);
+    //   Serial.println("Resposta: " + respostaServidor);
+      DEBUG_PRINTLN("Resposta: " + respostaServidor);
     } else {
-      Serial.print("Erro no envio: ");
-      Serial.println(http.errorToString(codigoResposta).c_str());
+    //   Serial.print("Erro no envio: ");
+    //   Serial.println(http.errorToString(codigoResposta).c_str());
+      DEBUG_PRINT("Erro no envio: ");
+      DEBUG_PRINTLN(http.errorToString(codigoResposta).c_str());
     }
 
     http.end();
@@ -180,6 +216,11 @@ void printFinalReport() {
 
 void setup() {
     Serial.begin(115200);
+
+    // Inicia o Bluetooth com o nome que vai aparecer no seu PC/Celular
+    // SerialBT.begin("ESP32_Debug_BT"); 
+    // Serial.println("O dispositivo Bluetooth iniciou. Pode parear agora!");
+    // Bluetooth desativado por questões de espaço. O monitoramente só será possível via cabo USB
 
     // 1. Configuração dos Pinos de Hardware
     pinMode(MOTOR_PIN_CLOCKWISE, INPUT_PULLDOWN);
