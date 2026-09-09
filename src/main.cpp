@@ -6,20 +6,19 @@
 #include <HTTPClient.h>
 #include <HTTPUpdate.h>
 #include <WiFiClientSecure.h>
-// #include "BluetoothSerial.h"
-// Bluetooth desativado por limitações de espaço
+#include "BluetoothSerial.h"
 
 // Verifica se o Bluetooth está habilitado nas configurações do chip
-// #if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
-// #error O Bluetooth não está habilitado! Habilite-o no menuconfig.
-// #endif
+#if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
+#error O Bluetooth não está habilitado! Habilite-o no menuconfig.
+#endif
 
-// BluetoothSerial SerialBT;
+BluetoothSerial SerialBT;
 
 // Macro inteligente para imprimir em ambas as seriais (USB e Bluetooth)
-#define DEBUG_PRINT(x)    { Serial.print(x); /*SerialBT.print(x);*/ }
-#define DEBUG_PRINTLN(x)  { Serial.println(x); /*SerialBT.println(x);*/ }
-#define DEBUG_PRINTF(format, ...) { Serial.printf(format, ##__VA_ARGS__); /*SerialBT.printf(format, ##__VA_ARGS__);*/ }
+#define DEBUG_PRINT(x)    { Serial.print(x); SerialBT.print(x); }
+#define DEBUG_PRINTLN(x)  { Serial.println(x); SerialBT.println(x); }
+#define DEBUG_PRINTF(format, ...) { Serial.printf(format, ##__VA_ARGS__); SerialBT.printf(format, ##__VA_ARGS__); }
 
 #define TRIGGER_PIN 0 // Usa o próprio botão BOOT do ESP32 para reset
 #define MOTOR_PIN_CLOCKWISE 23
@@ -219,9 +218,9 @@ void setup() {
     Serial.begin(115200);
 
     // Inicia o Bluetooth com o nome que vai aparecer no seu PC/Celular
-    // SerialBT.begin("ESP32_Debug_BT"); 
+    SerialBT.begin("ESP32_Debug_BT"); 
     // Serial.println("O dispositivo Bluetooth iniciou. Pode parear agora!");
-    // Bluetooth desativado por questões de espaço. O monitoramente só será possível via cabo USB
+    DEBUG_PRINTLN("O dispositivo Bluetooth iniciou. Pode parear agora!");
 
     // 1. Configuração dos Pinos de Hardware
     pinMode(MOTOR_PIN_CLOCKWISE, INPUT_PULLDOWN);
@@ -235,7 +234,8 @@ void setup() {
     preferences.end();
 
     // 3. Janela para Reset das Credenciais Wi-Fi (opcional)
-    Serial.println("\nIniciando... Segure o botão BOOT agora se quiser redefinir o Wi-Fi.");
+    // Serial.println("\nIniciando... Segure o botão BOOT agora se quiser redefinir o Wi-Fi.");
+    DEBUG_PRINTLN("\nIniciando... Segure o botão BOOT agora se quiser redefinir o Wi-Fi.");
     delay(3000);
 
     WiFiManager wm;
@@ -247,7 +247,8 @@ void setup() {
 
     // Se o botão BOOT estiver pressionado ao ligar, apaga o Wi-Fi salvo
     if (digitalRead(TRIGGER_PIN) == LOW) {
-        Serial.println("Botão BOOT pressionado! Apagando Wi-Fi salvo...");
+        // Serial.println("Botão BOOT pressionado! Apagando Wi-Fi salvo...");
+        DEBUG_PRINTLN("Botão BOOT pressionado! Apagando Wi-Fi salvo...");
         wm.resetSettings();
         delay(1000);
     }
@@ -259,7 +260,8 @@ void setup() {
 
     // Tenta conectar. Se falhar, abre o AP chamado "ESP32-Setup"
     if (!wm.autoConnect("ESP32-Setup")) {
-        Serial.println("Falha ao conectar ou tempo esgotado. Reiniciando...");
+        // Serial.println("Falha ao conectar ou tempo esgotado. Reiniciando...");
+        DEBUG_PRINTLN("Falha ao conectar ou tempo esgotado. Reiniciando...");
         ESP.restart();
     }
 
@@ -272,24 +274,32 @@ void setup() {
         preferences.end();
     }
 
-    Serial.println("\nWi-Fi conectado com sucesso!");
-    Serial.printf("\nID do Torno registrado: %s\n", torno_id);
+    // Serial.println("\nWi-Fi conectado com sucesso!");
+    // Serial.printf("\nID do Torno registrado: %s\n", torno_id);
+    DEBUG_PRINTLN("\nWi-Fi conectado com sucesso!");
+    DEBUG_PRINTF("\nID do Torno registrado: %s\n", torno_id);
 
     // 7. Sincronização de Tempo NTP (Executada apenas após o Wi-Fi estar ativo)
-    Serial.println("Iniciando sincronização NTP...");
+    // Serial.println("Iniciando sincronização NTP...");
+    DEBUG_PRINTLN("Iniciando sincronização NTP...");
     configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
 
     struct tm timeinfo;
     if (!getLocalTime(&timeinfo)) {
-        Serial.println("Falha ao obter a hora via NTP");
+        // Serial.println("Falha ao obter a hora via NTP");
+        DEBUG_PRINTLN("Falha ao obter a hora via NTP");
     } else {
-        Serial.println("Hora sincronizada com sucesso!");
-        Serial.printf("Data/Hora atual: %02d/%02d/%04d %02d:%02d:%02d\n",
+        // Serial.println("Hora sincronizada com sucesso!");
+        // Serial.printf("Data/Hora atual: %02d/%02d/%04d %02d:%02d:%02d\n",
+        //               timeinfo.tm_mday, timeinfo.tm_mon + 1, timeinfo.tm_year + 1900,
+        //               timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
+        DEBUG_PRINTLN("Hora sincronizada com sucesso!");
+        DEBUG_PRINTF("Data/Hora atual: %02d/%02d/%04d %02d:%02d:%02d\n",
                       timeinfo.tm_mday, timeinfo.tm_mon + 1, timeinfo.tm_year + 1900,
                       timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
     }
 
-    // checkForUpdates();
+    checkForUpdates();
 }
 
 void loop() {
@@ -317,7 +327,8 @@ void loop() {
             totalTimeOn = 0;
             totalTimeOff = 0;
             
-            Serial.println(">> Operação Iniciada.");
+            // Serial.println(">> Operação Iniciada.");
+            DEBUG_PRINTLN(">> Operação Iniciada.");
         }
     } 
     else if (currentState == RUNNING) {
@@ -333,7 +344,8 @@ void loop() {
             totalTimeOn += (millis() - lastStateChangeMillis);
             lastStateChangeMillis = millis();
 
-            Serial.println(">> Operação Interrompida.");
+            // Serial.println(">> Operação Interrompida.");
+            DEBUG_PRINTLN(">> Operação Interrompida.");
         }
     } 
     else if (currentState == PAUSED) {
@@ -346,14 +358,16 @@ void loop() {
             totalTimeOff += (millis() - lastStateChangeMillis);
             lastStateChangeMillis = millis();
 
-            Serial.println(">> Operação Retomada.");
+            // Serial.println(">> Operação Retomada.");
+            DEBUG_PRINTLN(">> Operação Retomada.");
         } 
         else {
             // Se continua desligado, verifica se passou 1 minuto
             if (millis() - lastStateChangeMillis >= TIMEOUT_OFF_MS) {
                 currentState = IDLE; // Reseta para aguardar nova operação
 
-                Serial.println(">> Operação Finalizada.");
+                // Serial.println(">> Operação Finalizada.");
+                DEBUG_PRINTLN(">> Operação Finalizada.");
 
                 printFinalReport();  // Imprime, salva ou envia os dados
             }
