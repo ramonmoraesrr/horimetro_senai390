@@ -15,7 +15,7 @@ env.Append(CPPDEFINES=[("FIRMWARE_VERSION", timestamp_version)])
 
 # 2. CÓPIA DO FIRMWARE PARA A RAIZ DO PROJETO
 def copy_firmware(source, target, env):
-    bin_path = str(source[0])
+    bin_path = str(target[0])
     shutil.copy(bin_path, "firmware.bin")
     print(f"==> SUCESSO: O arquivo {bin_path} foi copiado para a raiz!")
 
