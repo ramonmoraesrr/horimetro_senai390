@@ -6,19 +6,20 @@
 #include <HTTPClient.h>
 #include <HTTPUpdate.h>
 #include <WiFiClientSecure.h>
-#include "BluetoothSerial.h"
+// #include "BluetoothSerial.h"
+/* Bluetooth removido por falta de espaço */
 
 // Verifica se o Bluetooth está habilitado nas configurações do chip
-#if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
-#error O Bluetooth não está habilitado! Habilite-o no menuconfig.
-#endif
+// #if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
+// #error O Bluetooth não está habilitado! Habilite-o no menuconfig.
+// #endif
 
-BluetoothSerial SerialBT;
+// BluetoothSerial SerialBT;
 
 // Macro inteligente para imprimir em ambas as seriais (USB e Bluetooth)
-#define DEBUG_PRINT(x)    { Serial.print(x); SerialBT.print(x); }
-#define DEBUG_PRINTLN(x)  { Serial.println(x); SerialBT.println(x); }
-#define DEBUG_PRINTF(format, ...) { Serial.printf(format, ##__VA_ARGS__); SerialBT.printf(format, ##__VA_ARGS__); }
+#define DEBUG_PRINT(x)    { Serial.print(x); /*SerialBT.print(x);*/ }
+#define DEBUG_PRINTLN(x)  { Serial.println(x); /*SerialBT.println(x);*/ }
+#define DEBUG_PRINTF(format, ...) { Serial.printf(format, ##__VA_ARGS__); /*SerialBT.printf(format, ##__VA_ARGS__);*/ }
 
 #define TRIGGER_PIN 0 // Usa o próprio botão BOOT do ESP32 para reset
 #define MOTOR_PIN_CLOCKWISE 23
@@ -218,9 +219,9 @@ void setup() {
     Serial.begin(115200);
 
     // Inicia o Bluetooth com o nome que vai aparecer no seu PC/Celular
-    SerialBT.begin("ESP32_Debug_BT"); 
+    // SerialBT.begin("ESP32_Debug_BT"); 
     // Serial.println("O dispositivo Bluetooth iniciou. Pode parear agora!");
-    DEBUG_PRINTLN("O dispositivo Bluetooth iniciou. Pode parear agora!");
+    // DEBUG_PRINTLN("O dispositivo Bluetooth iniciou. Pode parear agora!");
 
     // 1. Configuração dos Pinos de Hardware
     pinMode(MOTOR_PIN_CLOCKWISE, INPUT_PULLDOWN);
@@ -298,6 +299,8 @@ void setup() {
                       timeinfo.tm_mday, timeinfo.tm_mon + 1, timeinfo.tm_year + 1900,
                       timeinfo.tm_hour, timeinfo.tm_min, timeinfo.tm_sec);
     }
+
+    DEBUG_PRINTF("[MEM] Heap Livre: %d | Maior Bloco Contiguo: %d\n", ESP.getFreeHeap(), ESP.getMaxAllocHeap());
 
     checkForUpdates();
 }
